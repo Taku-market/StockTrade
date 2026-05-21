@@ -1,0 +1,13 @@
+# Secret keys - NEVER upload this to GitHub
+.env
+
+# Python cache files - not needed on GitHub
+__pycache__/
+*.pyc
+*.pyo
+
+# VS Code settings
+.vscode/
+
+# Log files (optional - remove this line if you want logs on GitHub)
+logs/
