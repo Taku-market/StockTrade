@@ -45,7 +45,7 @@ def run_bot():
 
     # Step 1: Skip if market is closed
     if not is_market_open():
-        logger.info("Market is closed — skipping this run")
+        logger.info("Market is closed - skipping this run")
         return
 
     # Step 2: Check stop-loss first (safety check before anything else)
@@ -84,7 +84,7 @@ def main():
     """
     Start the bot and keep it running on a schedule.
     """
-    logger.info("🤖 SPY Trading Bot Starting...")
+    logger.info("SPY Trading Bot Starting...")
     logger.info(f"Will check for signals every {RUN_INTERVAL_MINUTES} minutes during market hours")
 
     # Run immediately once when the bot starts
@@ -93,7 +93,7 @@ def main():
     # Then run every 10 minutes automatically
     schedule.every(RUN_INTERVAL_MINUTES).minutes.do(run_bot)
 
-    logger.info(f"Scheduler started — next run in {RUN_INTERVAL_MINUTES} minutes")
+    logger.info(f"Scheduler started - next run in {RUN_INTERVAL_MINUTES} minutes")
 
     # Keep the bot running forever (until you press Ctrl+C to stop)
     while True:

@@ -63,12 +63,12 @@ def calculate_signals(df):
 
     # BUY signal: Short MA just crossed above Long MA
     if prev["short_ma"] <= prev["long_ma"] and last["short_ma"] > last["long_ma"]:
-        logger.info("Signal: BUY — Short MA crossed above Long MA 📈")
+        logger.info("Signal: BUY - Short MA crossed above Long MA")
         return "BUY", current_price
 
     # SELL signal: Short MA just crossed below Long MA
     elif prev["short_ma"] >= prev["long_ma"] and last["short_ma"] < last["long_ma"]:
-        logger.info("Signal: SELL — Short MA crossed below Long MA 📉")
+        logger.info("Signal: SELL - Short MA crossed below Long MA")
         return "SELL", current_price
 
     # No crossover — do nothing
