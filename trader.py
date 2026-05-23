@@ -63,10 +63,6 @@ def buy_spy():
     balance = get_account_balance()
     amount_to_spend = balance * POSITION_SIZE  # 10% of account
 
-    # Calculate how many shares we can buy
-    account = trading_client.get_account()
-    current_price = float(trading_client.get_open_position.__doc__ or 0)
-
     # Place the order using dollar amount (fractional shares allowed on SPY)
     order = MarketOrderRequest(
         symbol=SYMBOL,
