@@ -1,80 +1,61 @@
 import schedule
 import time
-from datetime import datetime
-import pytz
 
-from config import RUN_INTERVAL_MINUTES, MARKET_OPEN, MARKET_CLOSE
+from config import RUN_INTERVAL_MINUTES
 from strategy import get_signal
-from trader import get_current_position, check_stop_loss, buy_spy, sell_spy
+from trader import get_current_position, get_account_balance, check_stop_loss, buy_crypto, sell_crypto
+from dashboard import show_dashboard
+from ai_analyst import get_ai_comment
 from logger import logger
-
-
-# US Eastern timezone (New York) — stock market runs on ET
-ET = pytz.timezone("America/New_York")
-
-
-def is_market_open():
-    """
-    Check if the US stock market is currently open.
-    Market hours: Monday-Friday, 9:30am - 4:00pm ET
-    """
-    now = datetime.now(ET)
-
-    # Skip weekends (Saturday=5, Sunday=6)
-    if now.weekday() >= 5:
-        return False
-
-    # Check if current time is within market hours
-    market_open = now.replace(hour=9, minute=30, second=0, microsecond=0)
-    market_close = now.replace(hour=16, minute=0, second=0, microsecond=0)
-
-    return market_open <= now <= market_close
 
 
 def run_bot():
     """
-    The main bot logic — runs every 10 minutes.
-    This is the heart of the automation:
-    1. Check if market is open
-    2. Check stop-loss (sell if price dropped too much)
-    3. Get buy/sell signal from strategy
-    4. Execute the trade
+    The main bot logic — runs every 5 minutes.
+    Because crypto is 24/7, we no longer need to check market hours!
+
+    1. Check stop-loss (sell if price dropped too much)
+    2. Get buy/sell signal from strategy
+    3. Execute the trade
+    4. Show the dashboard
     """
     logger.info("=" * 50)
     logger.info("Bot running...")
 
-    # Step 1: Skip if market is closed
-    if not is_market_open():
-        logger.info("Market is closed - skipping this run")
-        return
-
-    # Step 2: Check stop-loss first (safety check before anything else)
+    # Step 1: Check stop-loss first (safety check before anything else)
     position = get_current_position()
 
     if position is not None:
         if check_stop_loss(position):
             logger.info("Selling due to stop-loss!")
-            sell_spy()
-            return  # Done for this run — wait for next cycle
+            sell_crypto()
+            position = None  # We no longer hold BTC after selling
 
-    # Step 3: Get signal from strategy (BUY / SELL / HOLD)
-    signal, current_price = get_signal()
+    # Step 2: Get signal from strategy (BUY / SELL / HOLD + MA values)
+    signal, current_price, short_ma, long_ma = get_signal()
 
-    # Step 4: Act on the signal
+    # Step 3: Act on the signal
     if signal == "BUY":
         if position is not None:
-            logger.info("Signal is BUY but we already own SPY — skipping")
+            logger.info("Signal is BUY but we already own BTC/USD — skipping")
         else:
-            buy_spy()
+            buy_crypto()
+            position = get_current_position()  # Refresh position after buying
 
     elif signal == "SELL":
         if position is None:
-            logger.info("Signal is SELL but we don't own SPY — skipping")
+            logger.info("Signal is SELL but we don't own BTC/USD — skipping")
         else:
-            sell_spy()
+            sell_crypto()
+            position = None
 
     elif signal == "HOLD":
         logger.info("Holding — no action taken")
+
+    # Step 4: Ask AI for a market comment, then show dashboard
+    balance    = get_account_balance()
+    ai_comment = get_ai_comment(current_price, short_ma, long_ma, signal)
+    show_dashboard(current_price, short_ma, long_ma, signal, position, balance, RUN_INTERVAL_MINUTES, ai_comment)
 
     logger.info("Bot finished this run")
     logger.info("=" * 50)
@@ -83,14 +64,16 @@ def run_bot():
 def main():
     """
     Start the bot and keep it running on a schedule.
+    Crypto is open 24/7 so the bot runs any time of day!
     """
-    logger.info("SPY Trading Bot Starting...")
-    logger.info(f"Will check for signals every {RUN_INTERVAL_MINUTES} minutes during market hours")
+    logger.info("Crypto Trading Bot Starting...")
+    logger.info(f"Trading pair: BTC/USD")
+    logger.info(f"Will check for signals every {RUN_INTERVAL_MINUTES} minutes")
 
     # Run immediately once when the bot starts
     run_bot()
 
-    # Then run every 10 minutes automatically
+    # Then run every 5 minutes automatically
     schedule.every(RUN_INTERVAL_MINUTES).minutes.do(run_bot)
 
     logger.info(f"Scheduler started - next run in {RUN_INTERVAL_MINUTES} minutes")
@@ -98,10 +81,8 @@ def main():
     # Keep the bot running forever (until you press Ctrl+C to stop)
     while True:
         schedule.run_pending()
-        time.sleep(30)  # Check every 30 seconds if it's time to run
+        time.sleep(30)
 
 
-# This line means: only run main() if we start this file directly
-# (not if another file imports it)
 if __name__ == "__main__":
     main()

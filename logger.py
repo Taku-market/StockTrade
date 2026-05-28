@@ -24,7 +24,7 @@ stream_handler = logging.StreamHandler(
 stream_handler.setFormatter(formatter)
 
 # Create the logger object - we'll import this in other files
-logger = logging.getLogger("spy-bot")
+logger = logging.getLogger("crypto-bot")
 logger.setLevel(logging.INFO)
 logger.addHandler(file_handler)
 logger.addHandler(stream_handler)
